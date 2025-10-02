@@ -3,7 +3,7 @@
 // ===============================================================
 const AIRTABLE_TOKEN = "patFo2wrzCxbCdyWd.a799c046a822e0b5fba5058fee75b8b51990dcd5f806115012c82197b56b1321"; 
 const AIRTABLE_BASE_ID = "appCxxXUwMyifQYY9";            
-const AIRTABLE_TABLE_NAME = "Codes";                        
+const AIRTABLE_TABLE_NAME = "Codes"; 
 // ===============================================================
 // 下面的代码不需要修改
 // ===============================================================
@@ -61,7 +61,7 @@ function renderCodes(records) {
 
         const codeItem = document.createElement('div');
         codeItem.className = 'code-item';
-        codeItem.id = `code-${record.id}`; // 给每个条目一个唯一的ID
+        codeItem.id = `code-${record.id}`;
         
         let statusText = `可用次数: ${remaining}/${totalChances}`;
         let statusColor = '#27ae60'; // Green
@@ -72,7 +72,7 @@ function renderCodes(records) {
         }
 
         // ***** 主要修改点 *****
-        // 下面的 HTML 中已移除“报告无效”按钮
+        // HTML 中已移除“报告无效”按钮
         codeItem.innerHTML = `
             <div class="code-info">
                 <p class="code-text">${fields.Code}</p>
@@ -89,7 +89,6 @@ function renderCodes(records) {
 // 获取所有邀请码
 async function fetchCodes() {
     codeListDiv.innerHTML = '<p class="code-item-placeholder">正在努力加载邀请码...</p>';
-    // 按创建时间倒序排序，最新的在最前面
     const data = await airtableFetch(`${airtableUrl}?sort%5B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc`);
     if (data && data.records) {
         renderCodes(data.records);
@@ -113,7 +112,6 @@ submitForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    // 在提交时，我们不再关心 Status 和 ReportedInvalid 字段
     const newRecord = {
         fields: {
             "Code": code,
@@ -125,7 +123,7 @@ submitForm.addEventListener('submit', async (e) => {
     if (data) {
         alert('分享成功，感谢你的贡献！');
         codeInput.value = '';
-        fetchCodes(); // 重新加载列表
+        fetchCodes();
     }
     submitButton.disabled = false;
     submitButton.textContent = '分享';
@@ -143,7 +141,6 @@ async function markAsUsed(event, recordId, currentUsedCount) {
         "UsedCount": newUsedCount
     };
 
-    // 乐观更新UI，让用户感觉更快
     const codeItem = document.getElementById(`code-${recordId}`);
     if(codeItem) {
         const statusElement = codeItem.querySelector('.code-status');
@@ -155,13 +152,10 @@ async function markAsUsed(event, recordId, currentUsedCount) {
         }
     }
     
-    // 在后台更新Airtable
     airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: fieldsToUpdate });
 }
 
-// ***** 主要修改点 *****
 // reportInvalid 函数已被完全移除
 
-
-// 初始化：页面加载时立即获取邀请码
+// 初始化
 fetchCodes();
