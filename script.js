@@ -1,9 +1,9 @@
 // ===============================================================
 // 请在这里替换成你自己的凭证
 // ===============================================================
-const AIRTABLE_TOKEN = "patFo2wrzCxbCdyWd.a799c046a822e0b5fba5058fee75b8b51990dcd5f806115012c82197b56b1321"; // 替换成你的 Personal Access Token
-const AIRTABLE_BASE_ID = "appCxxXUwMyifQYY9";             // 替换成你的 Base ID
-const AIRTABLE_TABLE_NAME = "Codes";                         // 你的表名，应该就是 "Codes"
+const AIRTABLE_TOKEN = "patFo2wrzCxbCdyWd.a799c046a822e0b5fba5058fee75b8b51990dcd5f806115012c82197b56b1321"; 
+const AIRTABLE_BASE_ID = "appCxxXUwMyifQYY9";            
+const AIRTABLE_TABLE_NAME = "Codes";                        
 // ===============================================================
 // 下面的代码不需要修改
 // ===============================================================
@@ -55,17 +55,13 @@ function renderCodes(records) {
     records.forEach(record => {
         const fields = record.fields;
         
-        // 跳过状态为“已失效”的码
-        if (fields.Status === '已失效') {
-            return; 
-        }
-
         const usedCount = fields.UsedCount || 0;
         const totalChances = 4;
         const remaining = Math.max(0, totalChances - usedCount);
 
         const codeItem = document.createElement('div');
         codeItem.className = 'code-item';
+        codeItem.id = `code-${record.id}`; // 给每个条目一个唯一的ID
         
         let statusText = `可用次数: ${remaining}/${totalChances}`;
         let statusColor = '#27ae60'; // Green
@@ -74,19 +70,16 @@ function renderCodes(records) {
             statusText = `可能已用完`;
             statusColor = '#f39c12'; // Orange
         }
-        if (fields.Status === '可能已用完') {
-            statusText = `可能已用完 (由用户报告)`;
-            statusColor = '#f39c12'; // Orange
-        }
 
+        // ***** 主要修改点 *****
+        // 下面的 HTML 中已移除“报告无效”按钮
         codeItem.innerHTML = `
             <div class="code-info">
                 <p class="code-text">${fields.Code}</p>
                 <p class="code-status" style="color: ${statusColor};">${statusText}</p>
             </div>
             <div class="code-actions">
-                <button onclick="markAsUsed('${record.id}', ${usedCount})">复制 & 标记使用</button>
-                <button class="report-btn" onclick="reportInvalid('${record.id}')">报告无效</button>
+                <button onclick="markAsUsed(event, '${record.id}', ${usedCount})">复制 & 标记使用</button>
             </div>
         `;
         codeListDiv.appendChild(codeItem);
@@ -95,6 +88,7 @@ function renderCodes(records) {
 
 // 获取所有邀请码
 async function fetchCodes() {
+    codeListDiv.innerHTML = '<p class="code-item-placeholder">正在努力加载邀请码...</p>';
     // 按创建时间倒序排序，最新的在最前面
     const data = await airtableFetch(`${airtableUrl}?sort%5B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc`);
     if (data && data.records) {
@@ -107,18 +101,23 @@ async function fetchCodes() {
 // 提交新邀请码
 submitForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const submitButton = e.target.querySelector('button');
+    submitButton.disabled = true;
+    submitButton.textContent = '分享中...';
+
     const code = codeInput.value.trim().toUpperCase();
     if (code.length !== 6) {
         alert('请输入一个6位数的邀请码！');
+        submitButton.disabled = false;
+        submitButton.textContent = '分享';
         return;
     }
 
+    // 在提交时，我们不再关心 Status 和 ReportedInvalid 字段
     const newRecord = {
         fields: {
             "Code": code,
-            "Status": "可用",
-            "UsedCount": 0,
-            "ReportedInvalid": 0
+            "UsedCount": 0
         }
     };
 
@@ -128,12 +127,14 @@ submitForm.addEventListener('submit', async (e) => {
         codeInput.value = '';
         fetchCodes(); // 重新加载列表
     }
+    submitButton.disabled = false;
+    submitButton.textContent = '分享';
 });
 
 // 标记为已使用
-async function markAsUsed(recordId, currentUsedCount) {
-    const record = window.event.target.closest('.code-item').querySelector('.code-text').innerText;
-    navigator.clipboard.writeText(record).then(() => {
+async function markAsUsed(event, recordId, currentUsedCount) {
+    const recordText = event.target.closest('.code-item').querySelector('.code-text').innerText;
+    navigator.clipboard.writeText(recordText).then(() => {
         alert('邀请码已复制到剪贴板！');
     });
 
@@ -142,32 +143,24 @@ async function markAsUsed(recordId, currentUsedCount) {
         "UsedCount": newUsedCount
     };
 
-    // 如果使用次数达到4次，自动更新状态
-    if (newUsedCount >= 4) {
-        fieldsToUpdate.Status = "可能已用完";
+    // 乐观更新UI，让用户感觉更快
+    const codeItem = document.getElementById(`code-${recordId}`);
+    if(codeItem) {
+        const statusElement = codeItem.querySelector('.code-status');
+        if (newUsedCount < 4) {
+             statusElement.textContent = `可用次数: ${4 - newUsedCount}/4`;
+        } else {
+            statusElement.textContent = '可能已用完';
+            statusElement.style.color = '#f39c12';
+        }
     }
-
-    const data = await airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: fieldsToUpdate });
-    if (data) {
-        fetchCodes(); // 更新成功后刷新列表
-    }
-}
-
-// 报告无效
-async function reportInvalid(recordId) {
-    if (!confirm('确定要将此码报告为无效吗？这会帮助其他用户。')) {
-        return;
-    }
-    const fieldsToUpdate = {
-        "Status": "已失效" // 简化处理，报告一次即失效
-    };
     
-    const data = await airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: fieldsToUpdate });
-    if (data) {
-        alert('感谢你的反馈！');
-        fetchCodes(); // 更新成功后刷新列表
-    }
+    // 在后台更新Airtable
+    airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: fieldsToUpdate });
 }
+
+// ***** 主要修改点 *****
+// reportInvalid 函数已被完全移除
 
 
 // 初始化：页面加载时立即获取邀请码
