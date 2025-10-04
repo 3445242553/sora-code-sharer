@@ -8,6 +8,9 @@
 </head>
 <body>
 
+    <div class="notification-banner">
+        <p>📢 **重要提示**: 注册 Sora 账户时，请务必使用<strong>美国节点</strong>的网络环境，否则可能导致注册失败！</p>
+    </div>
     <header>
         <h1>Sora 邀请码共享站</h1>
         <p>一个互助、分享的社区。请珍惜每一次使用机会。</p>
@@ -18,7 +21,7 @@
             <h2>加入我们的QQ交流群</h2>
             <div class="community-links">
                 <div class="community-item">
-                    <h3>QQ群号: 822238102 <button class="copy-btn" onclick="copyText('123456789')">复制</button></h3>
+                    <h3>QQ群号: 822238102 <button class="copy-btn" onclick="copyText('822238102')">复制</button></h3>
                     <a href="https://qm.qq.com/q/wuMsUS7rfc" target="_blank" class="action-btn">一键加入QQ群</a>
                 </div>
             </div>
@@ -26,6 +29,7 @@
 
         <section class="submit-section">
             <h2>分享您的邀请码</h2>
+            <p class="share-tip">不知道自己的邀请码在哪？成功注册 Sora 后，即可在 Sora 官网的“个人中心”或“账户设置”中找到。</p>
             <form id="submit-form">
                 <input type="text" id="code-input" placeholder="请输入6位Sora邀请码" maxlength="6" required>
                 <button type="submit">分享</button>
@@ -51,7 +55,8 @@
         // 一个简单的复制文本功能
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('已复制: ' + text);
+                // 修正了提示文案
+                alert('QQ群号已复制: ' + text);
             }).catch(err => {
                 console.error('复制失败', err);
             });
