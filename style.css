@@ -8,6 +8,23 @@ body {
     color: #333;
 }
 
+/* START: 新增的样式 */
+/* 顶部提示横幅样式 */
+.notification-banner {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 15px 20px;
+    text-align: center;
+    border-bottom: 1px solid #ffeeba;
+}
+
+.notification-banner p {
+    margin: 0;
+    font-size: 16px;
+}
+/* END: 新增的样式 */
+
+
 /* 页面容器 */
 header, main, footer {
     max-width: 800px;
@@ -50,6 +67,17 @@ header h1 {
     margin-bottom: 30px;
     text-align: center;
 }
+
+/* START: 新增的样式 */
+/* 提交区域的提示文字样式 */
+.share-tip {
+    font-size: 14px;
+    color: #555;
+    margin-top: -10px;
+    margin-bottom: 20px;
+    padding: 0 15px;
+}
+/* END: 新增的样式 */
 
 #submit-form {
     display: flex;
