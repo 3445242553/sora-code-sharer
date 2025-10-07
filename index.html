@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sora 邀请码共享站</title>
     <link rel="stylesheet" href="style.css">
-    <script
-      src="https://fpcdn.io/v3/iife.min.js"
-      onload="initFingerprintJS()"
-    ></script>
+
+    <script src="https://fpcdn.io/v3/iife.min.js"></script>
+    <script src="script.js" defer></script>
     </head>
 <body>
 
@@ -37,7 +36,7 @@
             <form id="submit-form">
                 <input type="text" id="code-input" placeholder="正在初始化..." maxlength="6" required disabled>
                 <button type="submit" disabled>初始化...</button>
-                </form>
+            </form>
         </section>
 
         <section class="code-list-section">
@@ -54,9 +53,7 @@
         <p>免责声明: 所有邀请码均由网友分享，本站不保证其有效性。</p>
     </footer>
 
-    <script src="script.js"></script>
     <script>
-        // 一个简单的复制文本功能
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
                 alert('QQ群号已复制: ' + text);
