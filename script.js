@@ -1,34 +1,66 @@
 // ===============================================================
-// 请在这里替换成你自己的凭证
+// 您的凭证（请注意，暴露在前端有安全风险）
 // ===============================================================
 const AIRTABLE_TOKEN = "patFo2wrzCxbCdyWd.a799c046a822e0b5fba5058fee75b8b51990dcd5f806115012c82197b56b1321"; 
 const AIRTABLE_BASE_ID = "appCxxXUwMyifQYY9";            
 const AIRTABLE_TABLE_NAME = "Codes"; 
-// ===============================================================
-// 下面的代码不需要修改
 // ===============================================================
 
 const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
 const codeListDiv = document.getElementById('code-list');
 const submitForm = document.getElementById('submit-form');
 const codeInput = document.getElementById('code-input');
+let visitorId = null; // 全局变量，用来存储设备指纹
 
-// 封装一个 fetch 函数用于和 Airtable 交互
+// START: 新增 FingerprintJS 和表单状态管理逻辑
+async function initFingerprintJS() {
+    try {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        visitorId = result.visitorId;
+        console.log('设备指纹ID:', visitorId);
+
+        // 初始化成功后，激活表单
+        const submitButton = submitForm.querySelector('button');
+        const input = submitForm.querySelector('input');
+        
+        // 只有在用户没有提交过的情况下才激活
+        if (localStorage.getItem('hasSubmittedSoraCode') !== 'true') {
+            input.disabled = false;
+            input.placeholder = '请输入6位Sora邀请码';
+            submitButton.disabled = false;
+            submitButton.textContent = '分享';
+        }
+    } catch (error) {
+        console.error("FingerprintJS 初始化失败:", error);
+        const submitButton = submitForm.querySelector('button');
+        submitButton.textContent = '初始化失败';
+        codeInput.placeholder = '无法验证设备';
+    }
+}
+
+function checkSubmissionStatus() {
+    if (localStorage.getItem('hasSubmittedSoraCode') === 'true') {
+        const submitButton = submitForm.querySelector('button');
+        const input = submitForm.querySelector('input');
+        input.disabled = true;
+        input.placeholder = '您已经分享过邀请码了';
+        submitButton.disabled = true;
+        submitButton.textContent = '已分享';
+    }
+}
+// END: 新增逻辑
+
+// 封装一个 fetch 函数用于和 Airtable 交互 (保持不变)
 async function airtableFetch(url, method = 'GET', body = null) {
     const headers = {
         'Authorization': `Bearer ${AIRTABLE_TOKEN}`,
         'Content-Type': 'application/json'
     };
-
-    const options = {
-        method: method,
-        headers: headers
-    };
-
+    const options = { method, headers };
     if (body) {
         options.body = JSON.stringify(body);
     }
-
     try {
         const response = await fetch(url, options);
         if (!response.ok) {
@@ -44,35 +76,27 @@ async function airtableFetch(url, method = 'GET', body = null) {
 }
 
 
-// 渲染邀请码列表到页面上
+// 渲染邀请码列表到页面上 (保持不变)
 function renderCodes(records) {
     codeListDiv.innerHTML = ''; // 清空旧内容
     if (!records || records.length === 0) {
         codeListDiv.innerHTML = '<p class="code-item-placeholder">目前没有可用的邀请码，快来分享一个吧！</p>';
         return;
     }
-
     records.forEach(record => {
         const fields = record.fields;
-        
         const usedCount = fields.UsedCount || 0;
         const totalChances = 4;
         const remaining = Math.max(0, totalChances - usedCount);
-
         const codeItem = document.createElement('div');
         codeItem.className = 'code-item';
         codeItem.id = `code-${record.id}`;
-        
         let statusText = `可用次数: ${remaining}/${totalChances}`;
         let statusColor = '#27ae60'; // Green
-
         if (remaining === 0) {
             statusText = `可能已用完`;
             statusColor = '#f39c12'; // Orange
         }
-
-        // ***** 主要修改点 *****
-        // HTML 中已移除“报告无效”按钮
         codeItem.innerHTML = `
             <div class="code-info">
                 <p class="code-text">${fields.Code}</p>
@@ -86,7 +110,7 @@ function renderCodes(records) {
     });
 }
 
-// 获取所有邀请码
+// 获取所有邀请码 (保持不变)
 async function fetchCodes() {
     codeListDiv.innerHTML = '<p class="code-item-placeholder">正在努力加载邀请码...</p>';
     const data = await airtableFetch(`${airtableUrl}?sort%5B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc`);
@@ -97,12 +121,20 @@ async function fetchCodes() {
     }
 }
 
-// 提交新邀请码
+// START: 核心修改 - 提交新邀请码的逻辑
 submitForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitButton = e.target.querySelector('button');
     submitButton.disabled = true;
-    submitButton.textContent = '分享中...';
+    submitButton.textContent = '校验中...';
+
+    // 基础校验
+    if (!visitorId) {
+        alert('设备信息仍在初始化，请刷新页面或稍等片刻再试。');
+        submitButton.disabled = false;
+        submitButton.textContent = '分享';
+        return;
+    }
 
     const code = codeInput.value.trim().toUpperCase();
     if (code.length !== 6) {
@@ -112,24 +144,62 @@ submitForm.addEventListener('submit', async (e) => {
         return;
     }
 
+    const hasChinese = /[\u4e00-\u9fa5]/.test(code);
+    if (hasChinese) {
+        alert('邀请码不能包含汉字！');
+        submitButton.disabled = false;
+        submitButton.textContent = '分享';
+        return;
+    }
+
+    // 1. 验证设备是否已提交过
+    const checkFingerprintUrl = `${airtableUrl}?filterByFormula={Fingerprint}="${visitorId}"`;
+    const existingFingerprintRecords = await airtableFetch(checkFingerprintUrl);
+
+    if (existingFingerprintRecords && existingFingerprintRecords.records.length > 0) {
+        alert('感谢您的热情，但每个设备只能分享一次哦！');
+        localStorage.setItem('hasSubmittedSoraCode', 'true');
+        checkSubmissionStatus();
+        return;
+    }
+
+    // 2. 验证邀请码是否已存在
+    const checkCodeUrl = `${airtableUrl}?filterByFormula={Code}="${code}"`;
+    const existingCodeRecords = await airtableFetch(checkCodeUrl);
+
+    if (existingCodeRecords && existingCodeRecords.records.length > 0) {
+        alert('这个邀请码已经被其他人分享过了，请不要重复提交！');
+        submitButton.disabled = false;
+        submitButton.textContent = '分享';
+        return;
+    }
+
+    // 3. 如果所有验证都通过，则提交
+    submitButton.textContent = '分享中...';
     const newRecord = {
         fields: {
             "Code": code,
-            "UsedCount": 0
+            "UsedCount": 0,
+            "Fingerprint": visitorId,
+            "SubmitterIP": "N/A"
         }
     };
 
     const data = await airtableFetch(airtableUrl, 'POST', { records: [newRecord] });
     if (data) {
         alert('分享成功，感谢你的贡献！');
+        localStorage.setItem('hasSubmittedSoraCode', 'true');
+        checkSubmissionStatus();
         codeInput.value = '';
         fetchCodes();
+    } else {
+        submitButton.disabled = false;
+        submitButton.textContent = '分享';
     }
-    submitButton.disabled = false;
-    submitButton.textContent = '分享';
 });
+// END: 核心修改
 
-// 标记为已使用
+// 标记为已使用 (保持不变)
 async function markAsUsed(event, recordId, currentUsedCount) {
     const recordText = event.target.closest('.code-item').querySelector('.code-text').innerText;
     navigator.clipboard.writeText(recordText).then(() => {
@@ -155,7 +225,7 @@ async function markAsUsed(event, recordId, currentUsedCount) {
     airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: fieldsToUpdate });
 }
 
-// reportInvalid 函数已被完全移除
 
 // 初始化
 fetchCodes();
+checkSubmissionStatus();
