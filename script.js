@@ -1,11 +1,4 @@
 // ===============================================================
-// !! 最终修正 !!
-// 下面这一行是解决您问题的关键。请确保您的文件中
-// 的第一行代码与此完全一致，特别是 `* as` 部分。
-import * as FingerprintJS from 'https://fpcdn.io/v3/esm.min.js';
-// ===============================================================
-
-// ===============================================================
 // 您的凭证（请注意，暴露在前端有安全风险）
 // ===============================================================
 const AIRTABLE_TOKEN = "patFo2wrzCxbCdyWd.a799c046a822e0b5fba5058fee75b8b51990dcd5f806115012c82197b56b1321"; 
@@ -19,13 +12,17 @@ const submitForm = document.getElementById('submit-form');
 const codeInput = document.getElementById('code-input');
 let visitorId = null;
 
+// FingerprintJS 初始化函数
 async function initFingerprintJS() {
     try {
-        const fp = await FingerprintJS.load();
+        // 全局的 FingerprintJS 对象由新的CDN链接提供
+        const fpPromise = FingerprintJS.load();
+        const fp = await fpPromise;
         const result = await fp.get();
         visitorId = result.visitorId;
         console.log('设备指纹ID:', visitorId);
 
+        // 初始化成功后，激活表单
         const submitButton = submitForm.querySelector('button');
         const input = submitForm.querySelector('input');
         
@@ -120,7 +117,7 @@ async function fetchCodes() {
     }
 }
 
-// START: 核心修改点 - 实时处理输入框内容
+// START: 新增 - 实时处理输入框内容，只允许数字
 codeInput.addEventListener('input', () => {
     let value = codeInput.value;
     // 移除所有非数字的字符
@@ -128,7 +125,7 @@ codeInput.addEventListener('input', () => {
     // 将清理后的值写回输入框
     codeInput.value = value;
 });
-// END: 核心修改点
+// END: 新增
 
 submitForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -142,26 +139,27 @@ submitForm.addEventListener('submit', async (e) => {
         submitButton.textContent = '分享';
         return;
     }
-
     const code = codeInput.value.trim();
 
-    // START: 核心修改点 - 提交时也做一次最终校验，确保是纯数字
+    // START: 核心修改点 - 更新验证逻辑为纯数字
     const isValidFormat = /^[0-9]+$/.test(code);
     if (!isValidFormat && code.length > 0) {
-        alert('邀请码只能包含数字！');
+        alert('邀请码只能是纯数字！');
         submitButton.disabled = false;
         submitButton.textContent = '分享';
         return;
     }
     // END: 核心修改点
-
+    
     if (code.length !== 6) {
         alert('请输入一个6位数的邀请码！');
         submitButton.disabled = false;
         submitButton.textContent = '分享';
         return;
     }
-
+    
+    // 原有的 hasChinese 验证已包含在上面的纯数字验证中，所以可以移除
+    
     const checkFingerprintUrl = `${airtableUrl}?filterByFormula={Fingerprint}="${visitorId}"`;
     const existingFingerprintRecords = await airtableFetch(checkFingerprintUrl);
     if (existingFingerprintRecords && existingFingerprintRecords.records.length > 0) {
