@@ -1,11 +1,4 @@
 // ===============================================================
-// !! 最终修正 !!
-// 下面这一行是解决您问题的关键。请确保您的文件中
-// 的第一行代码与此完全一致，特别是 `* as` 部分。
-import * as FingerprintJS from 'https://fpcdn.io/v3/esm.min.js';
-// ===============================================================
-
-// ===============================================================
 // 您的凭证（请注意，暴露在前端有安全风险）
 // ===============================================================
 const AIRTABLE_TOKEN = "patFo2wrzCxbCdyWd.a799c046a822e0b5fba5058fee75b8b51990dcd5f806115012c82197b56b1321"; 
@@ -19,13 +12,17 @@ const submitForm = document.getElementById('submit-form');
 const codeInput = document.getElementById('code-input');
 let visitorId = null;
 
+// FingerprintJS 初始化函数
 async function initFingerprintJS() {
     try {
-        const fp = await FingerprintJS.load();
+        // 全局的 FingerprintJS 对象由新的CDN链接提供
+        const fpPromise = FingerprintJS.load();
+        const fp = await fpPromise;
         const result = await fp.get();
         visitorId = result.visitorId;
         console.log('设备指纹ID:', visitorId);
 
+        // 初始化成功后，激活表单
         const submitButton = submitForm.querySelector('button');
         const input = submitForm.querySelector('input');
         
@@ -207,6 +204,6 @@ async function markAsUsed(event, recordId, currentUsedCount) {
 }
 
 // 初始化调用
+initFingerprintJS();
 checkSubmissionStatus();
 fetchCodes();
-initFingerprintJS();
