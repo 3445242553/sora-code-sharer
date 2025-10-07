@@ -1,3 +1,7 @@
+// START: 修改点 - 使用 import 方式加载 FingerprintJS
+import FingerprintJS from 'https://fpcdn.io/v3/esm.min.js';
+// END: 修改点
+
 // ===============================================================
 // 您的凭证（请注意，暴露在前端有安全风险）
 // ===============================================================
@@ -14,7 +18,6 @@ let visitorId = null;
 
 async function initFingerprintJS() {
     try {
-        // FingerprintJS 库此时已经由 index.html 加载，可以直接使用
         const fp = await FingerprintJS.load();
         const result = await fp.get();
         visitorId = result.visitorId;
@@ -198,11 +201,8 @@ async function markAsUsed(event, recordId, currentUsedCount) {
     airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: fieldsToUpdate });
 }
 
-// START: 核心修改点 - 将初始化调用放入事件监听器
-document.addEventListener('DOMContentLoaded', () => {
-    // 页面HTML结构加载完毕后，再执行所有JS初始化操作
-    checkSubmissionStatus();
-    fetchCodes();
-    initFingerprintJS(); // 我们在这里主动调用它
-});
-// END: 核心修改点
+// START: 修改点 - 初始化调用
+checkSubmissionStatus();
+fetchCodes();
+initFingerprintJS();
+// END: 修改点
