@@ -1,6 +1,6 @@
-// START: 核心修改点 - 修正 import 语法
-import * as FingerprintJS from 'https://fpcdn.io/v3/esm.min.js';
-// END: 核心修改点
+// START: 修改点 - 使用 import 方式加载 FingerprintJS
+import FingerprintJS from 'https://fpcdn.io/v3/esm.min.js';
+// END: 修改点
 
 // ===============================================================
 // 您的凭证（请注意，暴露在前端有安全风险）
@@ -136,7 +136,7 @@ submitForm.addEventListener('submit', async (e) => {
         submitButton.textContent = '分享';
         return;
     }
-    const hasChinese = /[\u4e-00-\u9fa5]/.test(code);
+    const hasChinese = /[\u4e00-\u9fa5]/.test(code);
     if (hasChinese) {
         alert('邀请码不能包含汉字！');
         submitButton.disabled = false;
@@ -201,7 +201,8 @@ async function markAsUsed(event, recordId, currentUsedCount) {
     airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: fieldsToUpdate });
 }
 
-// 初始化调用
+// START: 修改点 - 初始化调用
 checkSubmissionStatus();
 fetchCodes();
 initFingerprintJS();
+// END: 修改点
