@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sora 邀请码共享站</title>
     <link rel="stylesheet" href="style.css">
-</head>
+    <script
+      src="https://fpcdn.io/v3/iife.min.js"
+      onload="initFingerprintJS()"
+    ></script>
+    </head>
 <body>
 
     <div class="notification-banner">
@@ -31,9 +35,9 @@
             <h2>分享您的邀请码</h2>
             <p class="share-tip">不知道自己的邀请码在哪？成功注册 Sora 后，即可在 Sora 官网的“个人中心”或“账户设置”中找到。</p>
             <form id="submit-form">
-                <input type="text" id="code-input" placeholder="请输入6位Sora邀请码" maxlength="6" required>
-                <button type="submit">分享</button>
-            </form>
+                <input type="text" id="code-input" placeholder="正在初始化..." maxlength="6" required disabled>
+                <button type="submit" disabled>初始化...</button>
+                </form>
         </section>
 
         <section class="code-list-section">
@@ -55,7 +59,6 @@
         // 一个简单的复制文本功能
         function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
-                // 修正了提示文案
                 alert('QQ群号已复制: ' + text);
             }).catch(err => {
                 console.error('复制失败', err);
