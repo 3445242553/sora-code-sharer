@@ -77,7 +77,7 @@ async function airtableFetch(url, method = 'GET', body = null) {
 function renderCodes(records) {
     codeListDiv.innerHTML = '';
     if (!records || records.length === 0) {
-        codeListDiv.innerHTML = '<p class="code-item-placeholder">目前没有可用的邀请码，快来分享一个吧！</p>';
+        codeListDiv.innerHTML = '<p class="code-item-placeholder">目前没有可用的邀请码，感谢您的耐心等待。</p>';
         return;
     }
     records.forEach(record => {
@@ -107,25 +107,27 @@ function renderCodes(records) {
     });
 }
 
+// START: 核心修改点 1 - 使用新的字段名 "Visibility"
 async function fetchCodes() {
     codeListDiv.innerHTML = '<p class="code-item-placeholder">正在努力加载邀请码...</p>';
-    const data = await airtableFetch(`${airtableUrl}?sort%5B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc`);
+    // 使用 filterByFormula 参数来筛选记录，只显示审核通过的
+    const filter = "filterByFormula={Visibility}='Visible'"; // <--- 修改点
+    const sort = "sort%5B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc";
+    const data = await airtableFetch(`${airtableUrl}?${filter}&${sort}`);
+
     if (data && data.records) {
         renderCodes(data.records);
     } else {
         codeListDiv.innerHTML = '<p class="code-item-placeholder">加载邀请码失败，请检查网络或API设置。</p>';
     }
 }
+// END: 核心修改点 1
 
-// START: 新增 - 实时处理输入框内容，只允许数字
 codeInput.addEventListener('input', () => {
     let value = codeInput.value;
-    // 移除所有非数字的字符
     value = value.replace(/[^0-9]/g, '');
-    // 将清理后的值写回输入框
     codeInput.value = value;
 });
-// END: 新增
 
 submitForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -141,7 +143,6 @@ submitForm.addEventListener('submit', async (e) => {
     }
     const code = codeInput.value.trim();
 
-    // START: 核心修改点 - 更新验证逻辑为纯数字
     const isValidFormat = /^[0-9]+$/.test(code);
     if (!isValidFormat && code.length > 0) {
         alert('邀请码只能是纯数字！');
@@ -149,7 +150,6 @@ submitForm.addEventListener('submit', async (e) => {
         submitButton.textContent = '分享';
         return;
     }
-    // END: 核心修改点
     
     if (code.length !== 6) {
         alert('请输入一个6位数的邀请码！');
@@ -157,8 +157,6 @@ submitForm.addEventListener('submit', async (e) => {
         submitButton.textContent = '分享';
         return;
     }
-    
-    // 原有的 hasChinese 验证已包含在上面的纯数字验证中，所以可以移除
     
     const checkFingerprintUrl = `${airtableUrl}?filterByFormula={Fingerprint}="${visitorId}"`;
     const existingFingerprintRecords = await airtableFetch(checkFingerprintUrl);
@@ -177,21 +175,25 @@ submitForm.addEventListener('submit', async (e) => {
         return;
     }
     submitButton.textContent = '分享中...';
+
+    // START: 核心修改点 2 - 使用新的字段名 "Visibility"
     const newRecord = {
         fields: {
             "Code": code,
             "UsedCount": 0,
             "Fingerprint": visitorId,
-            "SubmitterIP": "N/A"
+            "SubmitterIP": "N/A",
+            "Visibility": "Hidden" // <--- 修改点
         }
     };
+    // END: 核心修改点 2
+
     const data = await airtableFetch(airtableUrl, 'POST', { records: [newRecord] });
     if (data) {
-        alert('分享成功，感谢你的贡献！');
+        alert('分享成功！您的邀请码已提交，审核通过后即可显示。');
         localStorage.setItem('hasSubmittedSoraCode', 'true');
         checkSubmissionStatus();
         codeInput.value = '';
-        fetchCodes();
     } else {
         submitButton.disabled = false;
         submitButton.textContent = '分享';
