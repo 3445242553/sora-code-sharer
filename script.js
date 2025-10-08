@@ -1,7 +1,7 @@
 // ===============================================================
 // 您的凭证（请注意，暴露在前端有安全风险）
 // ===============================================================
-const AIRTABLE_TOKEN = "pat2RRdasPJQXCtoY.aaa6ee7e3404ed46cb05137eb6aa01c6c2477b5d7f7274ef2b2b008e07838a77"; 
+const AIRTABLE_TOKEN = "patjno0mNCQWrn7wb.28affcc3f6227960b94dcd491d38fd4a0c95d31d7a232dfc90a60148794be4e5"; 
 const AIRTABLE_BASE_ID = "appCxxXUwMyifQYY9";            
 const AIRTABLE_TABLE_NAME = "Codes"; 
 const BANNED_USERS_TABLE_NAME = "BannedUsers";
@@ -263,5 +263,6 @@ async function markAsUsed(event, recordId, currentUsedCount) {
 
 // 初始化调用
 initFingerprintJS();
+
 
 
