@@ -37,7 +37,7 @@ async function initFingerprintJS() {
         
         if (localStorage.getItem('hasSubmittedSoraCode') !== 'true') {
             input.disabled = false;
-            input.placeholder = '请输入6位邀请码 (字母+数字)'; 
+            input.placeholder = '请输入6位邀请码'; 
             submitButton.disabled = false;
             submitButton.textContent = '分享';
         }
@@ -263,4 +263,5 @@ async function markAsUsed(event, recordId, currentUsedCount) {
 
 // 初始化调用
 initFingerprintJS();
+
 
