@@ -128,14 +128,13 @@ function renderCodes(records) {
     });
 }
 
-// 获取邀请码列表 (逻辑不变，但现在因为好码直接可见，所以效果不同了)
+// 获取邀请码列表
 async function fetchCodes() {
     if (!visitorId) return; 
     codeListDiv.innerHTML = '<p class="code-item-placeholder">正在努力加载邀请码...</p>';
     
-    // 注意：这个查询依然只拉取 "Visible" 的码，因为我们不希望显示其他状态的码
     const filter = `filterByFormula={Visibility}='Visible'`;
-    const sort = "sort%5B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc";
+    const sort = "sort%B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc";
     const data = await airtableFetch(`${airtableUrl}?${filter}&${sort}`);
 
     if (data && data.records) {
@@ -213,7 +212,6 @@ submitForm.addEventListener('submit', async (e) => {
         }
         submitButton.textContent = '分享中...';
 
-        // START: 核心修改点 - 状态直接设为 "Visible"
         const newRecord = {
             fields: {
                 "Code": code,
@@ -223,13 +221,10 @@ submitForm.addEventListener('submit', async (e) => {
                 "Visibility": "Visible" // 直接设为可见
             }
         };
-        // END: 核心修改点
 
         const data = await airtableFetch(airtableUrl, 'POST', { records: [newRecord] });
         if (data) {
-            // START: 核心修改点 - 更新成功提示
             alert('分享成功！感谢您的贡献。');
-            // END: 核心修改点
             localStorage.setItem('hasSubmittedSoraCode', 'true');
             checkSubmissionStatus();
             codeInput.value = '';
@@ -263,6 +258,3 @@ async function markAsUsed(event, recordId, currentUsedCount) {
 
 // 初始化调用
 initFingerprintJS();
-
-
-
