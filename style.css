@@ -195,7 +195,7 @@ footer {
     padding: 40px;
 }
 
-/* 新增：教程链接样式 */
+/* 教程链接样式 */
 .tutorial-link {
     margin-top: 15px;
     font-size: 14px;
@@ -206,4 +206,13 @@ footer {
 }
 .tutorial-link a:hover {
     text-decoration: underline;
+}
+
+/* 教程文本区域样式 */
+.tutorial-text-area {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.8;
+    white-space: pre-wrap; /* 关键样式：让长句子能自动换行 */
+    word-wrap: break-word;
 }
