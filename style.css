@@ -194,3 +194,16 @@ footer {
     color: #888;
     padding: 40px;
 }
+
+/* 新增：教程链接样式 */
+.tutorial-link {
+    margin-top: 15px;
+    font-size: 14px;
+}
+.tutorial-link a {
+    color: #2980b9;
+    text-decoration: none;
+}
+.tutorial-link a:hover {
+    text-decoration: underline;
+}
