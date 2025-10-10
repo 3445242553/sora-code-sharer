@@ -56,7 +56,6 @@ header h1 {
     font-weight: normal;
 }
 
-/* START: 新增样式 */
 .community-item h3 .group-status {
     color: #e74c3c; /* 红色字体 */
     font-size: 0.9em;
@@ -69,7 +68,6 @@ header h1 {
     padding-top: 25px;
     border-top: 1px solid #d4e6f1; /* 添加一条分割线 */
 }
-/* END: 新增样式 */
 
 
 /* 提交区域 */
@@ -82,7 +80,6 @@ header h1 {
     text-align: center;
 }
 
-/* 提交区域的提示文字样式 */
 .share-tip {
     font-size: 14px;
     color: #555;
