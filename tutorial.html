@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>如何注册 Telegram - Sora 邀请码共享站</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>如何注册 Telegram (TG) 详细教程</h1>
+        <p style="margin-top: 10px;"><a href="index.html">返回主页</a></p>
+    </header>
+
+    <main>
+        <section class="submit-section" style="text-align: left; padding: 20px 40px; max-width: 720px;">
+            <pre id="tutorial-content" class="tutorial-text-area">正在加载教程内容...</pre>
+        </section>
+    </main>
+
+    <footer style="margin-top: 20px;">
+        <p>© Sora 邀请码共享站</p>
+    </footer>
+
+    <script>
+        // 当页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', () => {
+            const contentElement = document.getElementById('tutorial-content');
+            
+            // 使用 fetch API 读取您的教程文件
+            fetch('tutorial.txt')
+                .then(response => {
+                    if (!response.ok) {
+                        // 如果找不到文件或出现其他错误
+                        throw new Error('无法加载教程文件，请检查文件名是否为 tutorial.txt');
+                    }
+                    return response.text(); // 将文件内容作为纯文本读取
+                })
+                .then(text => {
+                    // 将读取到的文本内容放入 <pre> 标签中
+                    contentElement.textContent = text;
+                })
+                .catch(error => {
+                    console.error('加载教程时出错:', error);
+                    contentElement.textContent = '教程加载失败，请稍后再试。';
+                });
+        });
+    </script>
+    </body>
+</html>
