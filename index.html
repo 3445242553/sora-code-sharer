@@ -3,72 +3,477 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sora 邀请码共享站</title>
-    <link rel="stylesheet" href="style.css">
-
+    <title>Sora 邀请码共享站 - Nexus Interface</title>
+    <!-- 引入 Tailwind CSS 和 Lucide 图标库 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs/dist/fp.min.js"></script>
-    </head>
-<body>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
-    <div class="notification-banner">
-        <p>📢 **重要提示**: 注册 Sora 账户时，请务必使用<strong>美国节点</strong>的网络环境，否则可能导致注册失败！</p>
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-rose: #ff0055;
+            --bg-dark: #020617;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+        }
+
+        /* 扫描线动画 */
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 50;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* 霓虹发光文字 */
+        .text-glow-cyan {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5), 0 0 20px rgba(0, 243, 255, 0.2);
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+
+        /* 进度条动画 */
+        @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .loading-bar {
+            overflow: hidden;
+            position: relative;
+        }
+        .loading-bar::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.4), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+        /* 隐藏滚动条但保留功能 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="scanlines"></div>
+    <canvas id="particleCanvas" class="fixed inset-0 z-0 pointer-events-none opacity-40"></canvas>
+
+    <!-- 顶部紧急通知 -->
+    <div id="notice-banner" class="relative z-20 bg-cyan-500/10 border-b border-cyan-500/20 py-3 text-center">
+        <p class="text-xs md:text-sm text-cyan-400 animate-pulse">
+            <span class="font-bold mr-2">📢 SYSTEM ALERT:</span> 注册 Sora 账户务必使用 <span class="underline">美国节点</span>，防止注册失败。
+        </p>
     </div>
-    <header>
-        <h1>Sora 邀请码共享站</h1>
-        <p>一个互助、分享的社区。请珍惜每一次使用机会。</p>
+
+    <header class="relative z-20 pt-12 pb-8 text-center">
+        <div class="inline-block p-2 px-4 border border-cyan-500/30 rounded-full mb-4 bg-cyan-500/5">
+            <span class="text-[10px] tracking-[0.3em] uppercase text-cyan-400">Collaborative Terminal</span>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2 italic">
+            SORA <span class="text-cyan-400 text-glow-cyan">NEXUS</span>
+        </h1>
+        <p class="text-slate-500 text-sm max-w-md mx-auto leading-relaxed">
+            一个互助、分享的社区。请珍惜每一次数据交换的机会。
+        </p>
     </header>
 
-    <main>
-        <section class="community-section">
-            <h2>加入我们的交流群</h2>
-            <div class="community-links">
-                <div class="community-item">
-                    <h3>QQ群号: 822238102 <span class="group-status"></span> <button class="copy-btn" onclick="copyText('822238102')">复制</button></h3>
-                    <a href="https://qm.qq.com/q/wuMsUS7rfc" target="_blank" class="action-btn">一键加入QQ群</a>
+    <main class="relative z-20 container mx-auto px-4 max-w-4xl space-y-8 pb-20">
+        
+        <!-- 社群连接 -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="glass-card p-6 rounded-2xl flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="message-square" class="w-5 h-5 text-cyan-400"></i>
+                        <h2 class="font-bold text-white uppercase tracking-wider">QQ 交流群</h2>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-200 mb-1">822238102</p>
+                    <p class="text-[10px] text-slate-500 font-mono mb-4">NODE ID: SHA_822</p>
                 </div>
-                <div class="community-item telegram-item">
-                    <h3>Telegram  (推荐)</h3>
-                    <a href="https://t.me/soraekong" target="_blank" class="action-btn">点击加入 Telegram 群组</a>
-                    
-                    <p class="tutorial-link">
-                        不知道如何注册 Telegram？<a href="tutorial.html" target="_blank">点击查看详细图文教程</a>
-                    </p>
+                <div class="flex gap-2">
+                    <button onclick="copyRawText('822238102')" class="flex-1 py-2 rounded-lg bg-slate-800 text-xs hover:bg-slate-700 transition-all border border-white/5">复制群号</button>
+                    <a href="https://qm.qq.com/q/wuMsUS7rfc" target="_blank" class="flex-1 py-2 rounded-lg bg-cyan-600/20 border border-cyan-500/30 text-cyan-400 text-xs text-center hover:bg-cyan-500/30 transition-all">一键加入</a>
                 </div>
             </div>
+
+            <div class="glass-card p-6 rounded-2xl border-l-2 border-l-cyan-500/50">
+                <div class="flex items-center gap-2 mb-2">
+                    <i data-lucide="send" class="w-5 h-5 text-cyan-400"></i>
+                    <h2 class="font-bold text-white uppercase tracking-wider">Telegram (推荐)</h2>
+                </div>
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed">极致隐私保护，信息高度自由。推荐所有用户使用。</p>
+                <a href="https://t.me/soraekong" target="_blank" class="block w-full py-3 rounded-lg bg-cyan-500 text-black font-bold text-xs text-center shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:scale-[1.02] transition-all">加入 TG 频道</a>
+                <p class="text-[10px] mt-4 text-center">
+                    <a href="tutorial.html" class="text-cyan-500 hover:underline">如何注册 Telegram？查看图文教程</a>
+                </p>
+            </div>
         </section>
-        <section class="submit-section">
-            <h2>分享您的邀请码</h2>
-            <p class="share-tip">不知道自己的邀请码在哪？成功注册 Sora 后，即可在 Sora 官网的“个人中心”或“账户设置”中找到。</p>
-            <form id="submit-form">
-                <input type="text" id="code-input" placeholder="正在初始化..." maxlength="6" required disabled>
-                <button type="submit" disabled>初始化...</button>
+
+        <!-- 分享区域 -->
+        <section class="glass-card p-8 rounded-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+                <i data-lucide="share-2" class="w-20 h-20"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5 text-cyan-400"></i>
+                分享您的邀请码
+            </h2>
+            <p class="text-xs text-slate-500 mb-6">成功注册后，可在个人中心获取 6 位数邀请码。</p>
+            
+            <form id="submit-form" class="flex flex-col md:flex-row gap-3">
+                <input type="text" id="code-input" 
+                    placeholder="等待系统初始化..." 
+                    maxlength="6" required disabled
+                    class="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-cyan-400 font-mono focus:outline-none focus:border-cyan-500/50 transition-all placeholder:text-slate-700"
+                >
+                <button type="submit" id="submit-btn" disabled
+                    class="px-8 py-3 rounded-xl bg-slate-800 border border-white/10 text-slate-500 font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    <span>初始化中</span>
+                </button>
             </form>
         </section>
 
-        <section class="code-list-section">
-            <h2>可用邀请码列表</h2>
-            <div id="code-list">
-                <div class="code-item-placeholder">
-                    <p>正在努力加载邀请码...</p>
+        <!-- 列表区域 -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between px-2">
+                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                    <i data-lucide="database" class="w-4 h-4 text-cyan-500"></i>
+                    可用邀请码列表
+                </h2>
+                <div class="flex items-center gap-2 text-[10px] text-cyan-500/50 font-mono">
+                    <span class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                    LIVE SYNC ACTIVE
+                </div>
+            </div>
+
+            <div id="code-list" class="grid grid-cols-1 gap-3">
+                <!-- 骨架屏占位 -->
+                <div class="glass-card p-6 rounded-xl animate-pulse flex justify-between items-center">
+                    <div class="h-6 w-32 bg-slate-800 rounded"></div>
+                    <div class="h-8 w-24 bg-slate-800 rounded"></div>
                 </div>
             </div>
         </section>
+
     </main>
 
-    <footer>
-        <p>免责声明: 所有邀请码均由网友分享，本站不保证其有效性。</p>
+    <footer class="relative z-20 py-10 border-t border-white/5 text-center">
+        <p class="text-[10px] text-slate-600 font-mono">
+            SECURE TERMINAL ACCESS // NO LOG POLICY // © 2024 SORA NEXUS
+        </p>
+        <p class="text-[9px] text-slate-700 mt-2 max-w-xs mx-auto">
+            免责声明: 所有邀请码由社区网友分享，本站仅提供分发，不保证其100%有效。
+        </p>
     </footer>
 
-    <script src="script.js"></script>
-    <script>
-        function copyText(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('QQ群号已复制: ' + text);
-            }).catch(err => {
-                console.error('复制失败', err);
-            });
-        }
-    </script>
-    </body>
-</html>
+    <!-- 自定义通知弹窗 -->
+    <div id="custom-alert" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] hidden">
+        <div class="bg-cyan-500 text-black font-bold px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5"></i>
+            <span id="alert-text">操作成功</span>
+        </div>
+    </div>
 
+    <script>
+        // --- 系统凭证 ---
+        const AIRTABLE_TOKEN = "patjno0mNCQWrn7wb.28affcc3f6227960b94dcd491d38fd4a0c95d31d7a232dfc90a60148794be4e5"; 
+        const AIRTABLE_BASE_ID = "appCxxXUwMyifQYY9";            
+        const AIRTABLE_TABLE_NAME = "Codes"; 
+        const BANNED_USERS_TABLE_NAME = "BannedUsers";
+
+        const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
+        const bannedUsersUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${BANNED_USERS_TABLE_NAME}`;
+
+        const codeListDiv = document.getElementById('code-list');
+        const submitForm = document.getElementById('submit-form');
+        const codeInput = document.getElementById('code-input');
+        const submitBtn = document.getElementById('submit-btn');
+        let visitorId = null;
+
+        // 初始化图标
+        lucide.createIcons();
+
+        // --- 粒子背景 ---
+        const initParticles = () => {
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const count = 50;
+
+            const resize = () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            };
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * 0.4;
+                    this.vy = (Math.random() - 0.5) * 0.4;
+                    this.size = Math.random() * 2;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if(this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+                }
+                draw() {
+                    ctx.fillStyle = 'rgba(0, 243, 255, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            for(let i=0; i<count; i++) particles.push(new Particle());
+
+            const animate = () => {
+                ctx.clearRect(0,0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                // 画线
+                ctx.strokeStyle = 'rgba(0, 243, 255, 0.05)';
+                for(let i=0; i<particles.length; i++) {
+                    for(let j=i+1; j<particles.length; j++) {
+                        const dist = Math.hypot(particles[i].x - particles[j].x, particles[i].y - particles[j].y);
+                        if(dist < 150) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            };
+            animate();
+        };
+
+        // --- 功能函数 ---
+        function showNotification(text) {
+            const el = document.getElementById('custom-alert');
+            document.getElementById('alert-text').innerText = text;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        async function copyRawText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showNotification('数据已复制到剪贴板');
+            } catch (err) {
+                console.error('复制失败', err);
+            }
+        }
+
+        async function initFingerprintJS() {
+            try {
+                const fpPromise = FingerprintJS.load();
+                const fp = await fpPromise;
+                const result = await fp.get();
+                visitorId = result.visitorId;
+                
+                const isBanned = await checkIfBanned(visitorId);
+                if (isBanned) {
+                    document.body.innerHTML = `
+                        <div class="h-screen flex items-center justify-center bg-black">
+                            <div class="text-center p-8 border border-rose-500/30 rounded-2xl glass-card">
+                                <h1 class="text-3xl font-bold text-rose-500 mb-4">ACCESS DENIED</h1>
+                                <p class="text-slate-500 font-mono">您的设备已被限制访问。如有疑问请联系管理员。</p>
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                if (localStorage.getItem('hasSubmittedSoraCode') !== 'true') {
+                    codeInput.disabled = false;
+                    codeInput.placeholder = '请输入 6 位邀请码...';
+                    submitBtn.disabled = false;
+                    submitBtn.className = "px-8 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-black font-bold text-sm transition-all shadow-[0_0_20px_rgba(8,145,178,0.3)] flex items-center justify-center gap-2 active:scale-95";
+                    submitBtn.querySelector('span').innerText = '开始分享';
+                } else {
+                    checkSubmissionStatus();
+                }
+                
+                fetchCodes(); 
+            } catch (error) {
+                console.error("FS Init Failed", error);
+            }
+        }
+
+        async function checkIfBanned(fingerprint) {
+            if (!fingerprint) return false;
+            const filter = `filterByFormula={Fingerprint}='${fingerprint}'`;
+            const data = await airtableFetch(`${bannedUsersUrl}?${filter}`);
+            return data && data.records && data.records.length > 0;
+        }
+
+        function checkSubmissionStatus() {
+            if (localStorage.getItem('hasSubmittedSoraCode') === 'true') {
+                codeInput.disabled = true;
+                codeInput.placeholder = '已贡献：感谢您的分享';
+                submitBtn.disabled = true;
+                submitBtn.querySelector('span').innerText = '已分享';
+            }
+        }
+
+        async function airtableFetch(url, method = 'GET', body = null) {
+            const headers = { 'Authorization': `Bearer ${AIRTABLE_TOKEN}`, 'Content-Type': 'application/json' };
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+            try {
+                const response = await fetch(url, options);
+                if (!response.ok) throw new Error(`API Error`);
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                return null;
+            }
+        }
+
+        function renderCodes(records) {
+            codeListDiv.innerHTML = '';
+            if (!records || records.length === 0) {
+                codeListDiv.innerHTML = '<div class="p-12 text-center text-slate-600 border border-dashed border-white/5 rounded-2xl">目前没有可用的邀请码，请稍后再试。</div>';
+                return;
+            }
+            records.forEach(record => {
+                const fields = record.fields;
+                const used = fields.UsedCount || 0;
+                const max = 4;
+                const remain = Math.max(0, max - used);
+                const progressWidth = (remain / max) * 100;
+                
+                const card = document.createElement('div');
+                card.className = "glass-card p-5 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 group transition-all";
+                card.innerHTML = `
+                    <div class="flex-1 w-full md:w-auto">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-xl font-black text-cyan-400 font-mono tracking-widest">${fields.Code}</span>
+                            <span class="text-[9px] px-2 py-0.5 bg-slate-800 rounded text-slate-500 border border-white/5">AES_256</span>
+                        </div>
+                        <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]" style="width: ${progressWidth}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-2">
+                            <span class="text-[10px] text-slate-500">可用状态: ${remain > 0 ? 'ACTIVE' : 'DEPLETED'}</span>
+                            <span class="text-[10px] ${remain > 0 ? 'text-cyan-500' : 'text-rose-500'} font-bold">可用次数: ${remain}/${max}</span>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-auto">
+                        <button onclick="markAsUsed(this, '${record.id}', '${fields.Code}', ${used})" 
+                            class="w-full md:w-auto px-6 py-2.5 rounded-lg ${remain > 0 ? 'bg-cyan-500 text-black hover:bg-cyan-400' : 'bg-slate-800 text-slate-500 cursor-not-allowed'} font-bold text-xs transition-all flex items-center justify-center gap-2"
+                        >
+                            <i data-lucide="copy" class="w-3 h-3"></i>
+                            复制并标记
+                        </button>
+                    </div>
+                `;
+                codeListDiv.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        async function fetchCodes() {
+            const filter = `filterByFormula={Visibility}='Visible'`;
+            const sort = "sort%5B0%5D%5Bfield%5D=CreatedAt&sort%5B0%5D%5Bdirection%5D=desc";
+            const data = await airtableFetch(`${airtableUrl}?${filter}&${sort}`);
+            if (data && data.records) renderCodes(data.records);
+        }
+
+        codeInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+
+        submitForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = codeInput.value.trim();
+            if (code.length !== 6) return showNotification('请输入6位邀请码');
+            
+            submitBtn.disabled = true;
+            submitBtn.querySelector('span').innerText = '校验中...';
+
+            const isPureNumber = /^[0-9]{6}$/.test(code);
+            if (isPureNumber) {
+                const banRecord = { fields: { "Fingerprint": visitorId } };
+                await airtableFetch(bannedUsersUrl, 'POST', { records: [banRecord] });
+                location.reload();
+                return;
+            }
+
+            const checkCodeUrl = `${airtableUrl}?filterByFormula={Code}="${code}"`;
+            const existing = await airtableFetch(checkCodeUrl);
+            if (existing && existing.records.length > 0) {
+                showNotification('该邀请码已存在');
+                submitBtn.disabled = false;
+                submitBtn.querySelector('span').innerText = '开始分享';
+                return;
+            }
+
+            const newRecord = {
+                fields: {
+                    "Code": code,
+                    "UsedCount": 0,
+                    "Fingerprint": visitorId,
+                    "Visibility": "Visible"
+                }
+            };
+
+            const result = await airtableFetch(airtableUrl, 'POST', { records: [newRecord] });
+            if (result) {
+                showNotification('分享成功，感谢您的贡献');
+                localStorage.setItem('hasSubmittedSoraCode', 'true');
+                checkSubmissionStatus();
+                fetchCodes();
+            }
+        });
+
+        async function markAsUsed(btn, recordId, codeText, currentCount) {
+            await copyRawText(codeText);
+            const newCount = currentCount + 1;
+            await airtableFetch(`${airtableUrl}/${recordId}`, 'PATCH', { fields: { "UsedCount": newCount } });
+            fetchCodes(); // 刷新
+        }
+
+        // 初始化
+        window.onload = () => {
+            initParticles();
+            initFingerprintJS();
+        };
+    </script>
+</body>
+</html>
